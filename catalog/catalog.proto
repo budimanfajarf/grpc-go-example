@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "github.com/budimanfajarf/grpc-go-example/catalog/catalog";
+
+package catalog;
+
+service Catalog {
+    rpc GetStore(GetStoreRequest) returns (Store);
+}
+
+message GetStoreRequest {
+    string uuid = 1;
+}
+
+message Store {
+    string uuid = 1;
+    string name = 2;
+}
