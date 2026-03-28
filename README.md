@@ -2,23 +2,16 @@
 
 Follow these setup to run the [quick start][] example:
 
- 1. Get the code:
+ 1. Run the server:
 
     ```console
-    $ go get google.golang.org/grpc/examples/helloworld/greeter_client
-    $ go get google.golang.org/grpc/examples/helloworld/greeter_server
+    $ go run greeter_server/main.go
     ```
 
- 2. Run the server:
+ 2. Run the client:
 
     ```console
-    $ $(go env GOPATH)/bin/greeter_server &
-    ```
-
- 3. Run the client:
-
-    ```console
-    $ $(go env GOPATH)/bin/greeter_client
+    $ go run greeter_client/main.go
     Greeting: Hello world
     ```
 
