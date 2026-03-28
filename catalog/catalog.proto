@@ -6,13 +6,33 @@ package catalog;
 
 service Catalog {
     rpc GetStore(GetStoreRequest) returns (Store);
+    rpc StreamProducts(StreamProductsRequest) returns (stream Product);
+    rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
 }
 
 message GetStoreRequest {
     string uuid = 1;
 }
 
+message StreamProductsRequest {
+    repeated string uuids = 1;
+}
+
+message ListProductsRequest {
+    repeated string uuids = 1;
+}
+
 message Store {
     string uuid = 1;
     string name = 2;
+}
+
+message Product {
+    string uuid = 1;
+    string name = 2;
+    int64 price = 3; // IDR, no decimals
+}
+
+message ListProductsResponse {
+    repeated Product data = 1;
 }

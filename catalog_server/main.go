@@ -25,6 +25,28 @@ func (s *server) GetStore(_ context.Context, in *catalog.GetStoreRequest) (*cata
 	return &catalog.Store{Uuid: in.GetUuid(), Name: "Example Store"}, nil
 }
 
+func (s *server) StreamProducts(in *catalog.StreamProductsRequest, stream catalog.Catalog_StreamProductsServer) error {
+	log.Printf("Received: %v", in.GetUuids())
+	for i, uuid := range in.GetUuids() {
+		product := &catalog.Product{Uuid: uuid, Name: fmt.Sprintf("Example Product %d", i+1)}
+		log.Printf("Sending product: %v", product.GetUuid())
+		if err := stream.Send(product); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *server) ListProducts(_ context.Context, in *catalog.ListProductsRequest) (*catalog.ListProductsResponse, error) {
+	log.Printf("Received: %v", in.GetUuids())
+	data := []*catalog.Product{}
+	for i, uuid := range in.GetUuids() {
+		product := &catalog.Product{Uuid: uuid, Name: fmt.Sprintf("Example Product %d", i+1)}
+		data = append(data, product)
+	}
+	return &catalog.ListProductsResponse{Data: data}, nil
+}
+
 func main() {
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))

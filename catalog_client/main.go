@@ -31,4 +31,30 @@ func main() {
 		log.Fatalf("could not get store: %v", err)
 	}
 	log.Printf("Store: %s", r.GetName())
+
+	productUuids := []string{
+		"019d32d0-41cb-71a8-b71a-3d1089974b45",
+		"019d32d0-41cb-71a8-b71a-3d1089974b46",
+		"019d32d0-41cb-71a8-b71a-3d1089974b47",
+	}
+	streamProduct, err := c.StreamProducts(ctx, &catalog.StreamProductsRequest{Uuids: productUuids})
+	if err != nil {
+		log.Fatalf("could not stream products: %v", err)
+	}
+	for {
+		product, err := streamProduct.Recv()
+		if err != nil {
+			log.Printf("stream ended: %v", err)
+			break
+		}
+		log.Printf("stream Product: %s", product.GetName())
+	}
+
+	productsResponse, err := c.ListProducts(ctx, &catalog.ListProductsRequest{Uuids: productUuids})
+	if err != nil {
+		log.Fatalf("could not list products: %v", err)
+	}
+	for _, product := range productsResponse.GetData() {
+		log.Printf("Product: %s", product.GetName())
+	}
 }
