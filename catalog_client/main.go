@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"io"
 	"log"
 	"time"
 
@@ -39,15 +40,19 @@ func main() {
 	}
 	streamProduct, err := c.StreamProducts(ctx, &catalog.StreamProductsRequest{Uuids: productUuids})
 	if err != nil {
-		log.Fatalf("could not stream products: %v", err)
+		log.Fatalf("StreamProducts failed: %v", err)
 	}
+	log.Printf("StreamProducts started")
 	for {
 		product, err := streamProduct.Recv()
-		if err != nil {
-			log.Printf("stream ended: %v", err)
+		if err == io.EOF {
+			log.Printf("StreamProducts ended")
 			break
 		}
-		log.Printf("stream Product: %s", product.GetName())
+		if err != nil {
+			log.Fatalf("StreamProducts failed: %v", err)
+		}
+		log.Printf("Stream Product: %s", product.GetName())
 	}
 
 	productsResponse, err := c.ListProducts(ctx, &catalog.ListProductsRequest{Uuids: productUuids})

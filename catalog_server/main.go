@@ -30,6 +30,10 @@ func (s *server) StreamProducts(in *catalog.StreamProductsRequest, stream catalo
 	for i, uuid := range in.GetUuids() {
 		product := &catalog.Product{Uuid: uuid, Name: fmt.Sprintf("Example Product %d", i+1)}
 		log.Printf("Sending product: %v", product.GetUuid())
+		// if i == 1 {
+		// 	log.Printf("Simulating error for product: %v", product.GetUuid())
+		// 	return fmt.Errorf("simulated error for product: %v", product.GetUuid())
+		// }
 		if err := stream.Send(product); err != nil {
 			return err
 		}
