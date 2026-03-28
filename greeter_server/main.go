@@ -26,8 +26,9 @@ import (
 	"log"
 	"net"
 
-	"google.golang.org/grpc"
 	pb "grpc-go-example/helloworld"
+
+	"google.golang.org/grpc"
 )
 
 var (
@@ -43,6 +44,11 @@ type server struct {
 func (s *server) SayHello(_ context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
 	log.Printf("Received: %v", in.GetName())
 	return &pb.HelloReply{Message: "Hello " + in.GetName()}, nil
+}
+
+func (s *server) SayHelloAgain(_ context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
+	log.Printf("Received: %v", in.GetName())
+	return &pb.HelloReply{Message: "Hello again " + in.GetName()}, nil
 }
 
 func main() {
