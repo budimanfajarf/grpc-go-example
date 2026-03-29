@@ -5,21 +5,9 @@ option go_package = "github.com/budimanfajarf/grpc-go-example/catalog/catalog";
 package catalog;
 
 service Catalog {
-    rpc GetStore(GetStoreRequest) returns (Store);
-    rpc StreamProducts(StreamProductsRequest) returns (stream Product);
+    rpc GetStore(GetStoreRequest) returns (GetStoreResponse);
     rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
-}
-
-message GetStoreRequest {
-    string uuid = 1;
-}
-
-message StreamProductsRequest {
-    repeated string uuids = 1;
-}
-
-message ListProductsRequest {
-    repeated string uuids = 1;
+    rpc StreamProducts(StreamProductsRequest) returns (stream Product);
 }
 
 message Store {
@@ -33,6 +21,22 @@ message Product {
     int64 price = 3; // IDR, no decimals
 }
 
+message GetStoreRequest {
+    string uuid = 1;
+}
+
+message GetStoreResponse {
+    Store data = 1;
+}
+
+message ListProductsRequest {
+    repeated string uuids = 1;
+}
+
 message ListProductsResponse {
     repeated Product data = 1;
+}
+
+message StreamProductsRequest {
+    repeated string uuids = 1;
 }

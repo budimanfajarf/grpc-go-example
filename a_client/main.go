@@ -45,9 +45,10 @@ func main() {
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	store, err := catalogClient.GetStore(ctx, &catalogpb.GetStoreRequest{Uuid: "019d32d0-41cb-71a8-b71a-3d1089974b45"})
+	storeResponse, err := catalogClient.GetStore(ctx, &catalogpb.GetStoreRequest{Uuid: "019d32d0-41cb-71a8-b71a-3d1089974b45"})
 	if err != nil {
 		log.Fatalf("could not get store: %v", err)
 	}
+	store := storeResponse.GetData()
 	log.Printf("Store: %s", store.GetName())
 }

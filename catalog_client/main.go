@@ -27,32 +27,17 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	r, err := c.GetStore(ctx, &catalog.GetStoreRequest{Uuid: "019d32d0-41cb-71a8-b71a-3d1089974b45"})
+	storeResponse, err := c.GetStore(ctx, &catalog.GetStoreRequest{Uuid: "019d32d0-41cb-71a8-b71a-3d1089974b45"})
 	if err != nil {
 		log.Fatalf("could not get store: %v", err)
 	}
-	log.Printf("Store: %s", r.GetName())
+	store := storeResponse.GetData()
+	log.Printf("Store: %s", store.GetName())
 
 	productUuids := []string{
 		"019d32d0-41cb-71a8-b71a-3d1089974b45",
 		"019d32d0-41cb-71a8-b71a-3d1089974b46",
 		"019d32d0-41cb-71a8-b71a-3d1089974b47",
-	}
-	streamProduct, err := c.StreamProducts(ctx, &catalog.StreamProductsRequest{Uuids: productUuids})
-	if err != nil {
-		log.Fatalf("StreamProducts failed: %v", err)
-	}
-	log.Printf("StreamProducts started")
-	for {
-		product, err := streamProduct.Recv()
-		if err == io.EOF {
-			log.Printf("StreamProducts ended")
-			break
-		}
-		if err != nil {
-			log.Fatalf("StreamProducts failed: %v", err)
-		}
-		log.Printf("Stream Product: %s", product.GetName())
 	}
 
 	productsResponse, err := c.ListProducts(ctx, &catalog.ListProductsRequest{Uuids: productUuids})
@@ -61,5 +46,24 @@ func main() {
 	}
 	for _, product := range productsResponse.GetData() {
 		log.Printf("Product: %s", product.GetName())
+	}
+
+	streamCtx, streamCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer streamCancel()
+	streamProducts, err := c.StreamProducts(streamCtx, &catalog.StreamProductsRequest{Uuids: productUuids})
+	if err != nil {
+		log.Fatalf("StreamProducts failed: %v", err)
+	}
+	log.Printf("StreamProducts started")
+	for {
+		product, err := streamProducts.Recv()
+		if err == io.EOF {
+			log.Printf("StreamProducts ended")
+			break
+		}
+		if err != nil {
+			log.Fatalf("StreamProducts failed: %v", err)
+		}
+		log.Printf("Stream Product: %s", product.GetName())
 	}
 }

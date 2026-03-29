@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	"github.com/budimanfajarf/grpc-go-example/catalog"
 	"google.golang.org/grpc"
@@ -20,35 +21,59 @@ type server struct {
 }
 
 // GetStore implements catalog.CatalogServer
-func (s *server) GetStore(_ context.Context, in *catalog.GetStoreRequest) (*catalog.Store, error) {
-	log.Printf("Received: %v", in.GetUuid())
-	return &catalog.Store{Uuid: in.GetUuid(), Name: "Example Store"}, nil
+func (s *server) GetStore(_ context.Context, in *catalog.GetStoreRequest) (*catalog.GetStoreResponse, error) {
+	uuid := in.GetUuid()
+	log.Printf("Received: %v", uuid)
+
+	if uuid == "" {
+		return nil, fmt.Errorf("uuid required")
+	}
+
+	// return nil, nil // simulate not found
+
+	return &catalog.GetStoreResponse{
+		Data: &catalog.Store{
+			Uuid: uuid,
+			Name: "Example Store",
+		},
+	}, nil
+}
+
+func (s *server) ListProducts(_ context.Context, in *catalog.ListProductsRequest) (*catalog.ListProductsResponse, error) {
+	uuids := in.GetUuids()
+	if len(uuids) == 0 {
+		return nil, fmt.Errorf("uuids required")
+	}
+	log.Printf("Received: %v", uuids)
+
+	data := []*catalog.Product{}
+	for i, uuid := range uuids {
+		product := &catalog.Product{Uuid: uuid, Name: fmt.Sprintf("Example Product %d", i+1), Price: int64(10000 + (i * 2000))}
+		data = append(data, product)
+	}
+	return &catalog.ListProductsResponse{Data: data}, nil
 }
 
 func (s *server) StreamProducts(in *catalog.StreamProductsRequest, stream catalog.Catalog_StreamProductsServer) error {
-	log.Printf("Received: %v", in.GetUuids())
-	for i, uuid := range in.GetUuids() {
-		product := &catalog.Product{Uuid: uuid, Name: fmt.Sprintf("Example Product %d", i+1)}
+	uuids := in.GetUuids()
+	if len(uuids) == 0 {
+		return fmt.Errorf("uuids required")
+	}
+	log.Printf("Received: %v", uuids)
+
+	for i, uuid := range uuids {
+		product := &catalog.Product{Uuid: uuid, Name: fmt.Sprintf("Example Product %d", i+1), Price: int64(10000 + (i * 2000))}
 		log.Printf("Sending product: %v", product.GetUuid())
 		// if i == 1 {
 		// 	log.Printf("Simulating error for product: %v", product.GetUuid())
 		// 	return fmt.Errorf("simulated error for product: %v", product.GetUuid())
 		// }
+		time.Sleep(500 * time.Millisecond) // add a small delay to simulate processing time
 		if err := stream.Send(product); err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func (s *server) ListProducts(_ context.Context, in *catalog.ListProductsRequest) (*catalog.ListProductsResponse, error) {
-	log.Printf("Received: %v", in.GetUuids())
-	data := []*catalog.Product{}
-	for i, uuid := range in.GetUuids() {
-		product := &catalog.Product{Uuid: uuid, Name: fmt.Sprintf("Example Product %d", i+1)}
-		data = append(data, product)
-	}
-	return &catalog.ListProductsResponse{Data: data}, nil
 }
 
 func main() {

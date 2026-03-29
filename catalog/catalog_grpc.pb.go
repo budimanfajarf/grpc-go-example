@@ -20,17 +20,17 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	Catalog_GetStore_FullMethodName       = "/catalog.Catalog/GetStore"
-	Catalog_StreamProducts_FullMethodName = "/catalog.Catalog/StreamProducts"
 	Catalog_ListProducts_FullMethodName   = "/catalog.Catalog/ListProducts"
+	Catalog_StreamProducts_FullMethodName = "/catalog.Catalog/StreamProducts"
 )
 
 // CatalogClient is the client API for Catalog service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CatalogClient interface {
-	GetStore(ctx context.Context, in *GetStoreRequest, opts ...grpc.CallOption) (*Store, error)
-	StreamProducts(ctx context.Context, in *StreamProductsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Product], error)
+	GetStore(ctx context.Context, in *GetStoreRequest, opts ...grpc.CallOption) (*GetStoreResponse, error)
 	ListProducts(ctx context.Context, in *ListProductsRequest, opts ...grpc.CallOption) (*ListProductsResponse, error)
+	StreamProducts(ctx context.Context, in *StreamProductsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Product], error)
 }
 
 type catalogClient struct {
@@ -41,10 +41,20 @@ func NewCatalogClient(cc grpc.ClientConnInterface) CatalogClient {
 	return &catalogClient{cc}
 }
 
-func (c *catalogClient) GetStore(ctx context.Context, in *GetStoreRequest, opts ...grpc.CallOption) (*Store, error) {
+func (c *catalogClient) GetStore(ctx context.Context, in *GetStoreRequest, opts ...grpc.CallOption) (*GetStoreResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Store)
+	out := new(GetStoreResponse)
 	err := c.cc.Invoke(ctx, Catalog_GetStore_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *catalogClient) ListProducts(ctx context.Context, in *ListProductsRequest, opts ...grpc.CallOption) (*ListProductsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListProductsResponse)
+	err := c.cc.Invoke(ctx, Catalog_ListProducts_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -70,23 +80,13 @@ func (c *catalogClient) StreamProducts(ctx context.Context, in *StreamProductsRe
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Catalog_StreamProductsClient = grpc.ServerStreamingClient[Product]
 
-func (c *catalogClient) ListProducts(ctx context.Context, in *ListProductsRequest, opts ...grpc.CallOption) (*ListProductsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListProductsResponse)
-	err := c.cc.Invoke(ctx, Catalog_ListProducts_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // CatalogServer is the server API for Catalog service.
 // All implementations must embed UnimplementedCatalogServer
 // for forward compatibility.
 type CatalogServer interface {
-	GetStore(context.Context, *GetStoreRequest) (*Store, error)
-	StreamProducts(*StreamProductsRequest, grpc.ServerStreamingServer[Product]) error
+	GetStore(context.Context, *GetStoreRequest) (*GetStoreResponse, error)
 	ListProducts(context.Context, *ListProductsRequest) (*ListProductsResponse, error)
+	StreamProducts(*StreamProductsRequest, grpc.ServerStreamingServer[Product]) error
 	mustEmbedUnimplementedCatalogServer()
 }
 
@@ -97,14 +97,14 @@ type CatalogServer interface {
 // pointer dereference when methods are called.
 type UnimplementedCatalogServer struct{}
 
-func (UnimplementedCatalogServer) GetStore(context.Context, *GetStoreRequest) (*Store, error) {
+func (UnimplementedCatalogServer) GetStore(context.Context, *GetStoreRequest) (*GetStoreResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetStore not implemented")
-}
-func (UnimplementedCatalogServer) StreamProducts(*StreamProductsRequest, grpc.ServerStreamingServer[Product]) error {
-	return status.Error(codes.Unimplemented, "method StreamProducts not implemented")
 }
 func (UnimplementedCatalogServer) ListProducts(context.Context, *ListProductsRequest) (*ListProductsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListProducts not implemented")
+}
+func (UnimplementedCatalogServer) StreamProducts(*StreamProductsRequest, grpc.ServerStreamingServer[Product]) error {
+	return status.Error(codes.Unimplemented, "method StreamProducts not implemented")
 }
 func (UnimplementedCatalogServer) mustEmbedUnimplementedCatalogServer() {}
 func (UnimplementedCatalogServer) testEmbeddedByValue()                 {}
@@ -145,17 +145,6 @@ func _Catalog_GetStore_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Catalog_StreamProducts_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(StreamProductsRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(CatalogServer).StreamProducts(m, &grpc.GenericServerStream[StreamProductsRequest, Product]{ServerStream: stream})
-}
-
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Catalog_StreamProductsServer = grpc.ServerStreamingServer[Product]
-
 func _Catalog_ListProducts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListProductsRequest)
 	if err := dec(in); err != nil {
@@ -173,6 +162,17 @@ func _Catalog_ListProducts_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	return interceptor(ctx, in, info, handler)
 }
+
+func _Catalog_StreamProducts_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(StreamProductsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(CatalogServer).StreamProducts(m, &grpc.GenericServerStream[StreamProductsRequest, Product]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Catalog_StreamProductsServer = grpc.ServerStreamingServer[Product]
 
 // Catalog_ServiceDesc is the grpc.ServiceDesc for Catalog service.
 // It's only intended for direct use with grpc.RegisterService,
