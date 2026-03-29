@@ -22,6 +22,7 @@ const (
 	Catalog_GetStore_FullMethodName       = "/catalog.Catalog/GetStore"
 	Catalog_ListProducts_FullMethodName   = "/catalog.Catalog/ListProducts"
 	Catalog_StreamProducts_FullMethodName = "/catalog.Catalog/StreamProducts"
+	Catalog_ReserveStocks_FullMethodName  = "/catalog.Catalog/ReserveStocks"
 )
 
 // CatalogClient is the client API for Catalog service.
@@ -31,6 +32,7 @@ type CatalogClient interface {
 	GetStore(ctx context.Context, in *GetStoreRequest, opts ...grpc.CallOption) (*GetStoreResponse, error)
 	ListProducts(ctx context.Context, in *ListProductsRequest, opts ...grpc.CallOption) (*ListProductsResponse, error)
 	StreamProducts(ctx context.Context, in *StreamProductsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Product], error)
+	ReserveStocks(ctx context.Context, in *ReserveStocksRequest, opts ...grpc.CallOption) (*ReserveStocksResponse, error)
 }
 
 type catalogClient struct {
@@ -80,6 +82,16 @@ func (c *catalogClient) StreamProducts(ctx context.Context, in *StreamProductsRe
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Catalog_StreamProductsClient = grpc.ServerStreamingClient[Product]
 
+func (c *catalogClient) ReserveStocks(ctx context.Context, in *ReserveStocksRequest, opts ...grpc.CallOption) (*ReserveStocksResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReserveStocksResponse)
+	err := c.cc.Invoke(ctx, Catalog_ReserveStocks_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CatalogServer is the server API for Catalog service.
 // All implementations must embed UnimplementedCatalogServer
 // for forward compatibility.
@@ -87,6 +99,7 @@ type CatalogServer interface {
 	GetStore(context.Context, *GetStoreRequest) (*GetStoreResponse, error)
 	ListProducts(context.Context, *ListProductsRequest) (*ListProductsResponse, error)
 	StreamProducts(*StreamProductsRequest, grpc.ServerStreamingServer[Product]) error
+	ReserveStocks(context.Context, *ReserveStocksRequest) (*ReserveStocksResponse, error)
 	mustEmbedUnimplementedCatalogServer()
 }
 
@@ -105,6 +118,9 @@ func (UnimplementedCatalogServer) ListProducts(context.Context, *ListProductsReq
 }
 func (UnimplementedCatalogServer) StreamProducts(*StreamProductsRequest, grpc.ServerStreamingServer[Product]) error {
 	return status.Error(codes.Unimplemented, "method StreamProducts not implemented")
+}
+func (UnimplementedCatalogServer) ReserveStocks(context.Context, *ReserveStocksRequest) (*ReserveStocksResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReserveStocks not implemented")
 }
 func (UnimplementedCatalogServer) mustEmbedUnimplementedCatalogServer() {}
 func (UnimplementedCatalogServer) testEmbeddedByValue()                 {}
@@ -174,6 +190,24 @@ func _Catalog_StreamProducts_Handler(srv interface{}, stream grpc.ServerStream) 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Catalog_StreamProductsServer = grpc.ServerStreamingServer[Product]
 
+func _Catalog_ReserveStocks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReserveStocksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServer).ReserveStocks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Catalog_ReserveStocks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServer).ReserveStocks(ctx, req.(*ReserveStocksRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Catalog_ServiceDesc is the grpc.ServiceDesc for Catalog service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -188,6 +222,10 @@ var Catalog_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListProducts",
 			Handler:    _Catalog_ListProducts_Handler,
+		},
+		{
+			MethodName: "ReserveStocks",
+			Handler:    _Catalog_ReserveStocks_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

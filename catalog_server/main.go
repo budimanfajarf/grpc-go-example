@@ -77,6 +77,41 @@ func (s *server) StreamProducts(in *catalog.StreamProductsRequest, stream catalo
 	return nil
 }
 
+func (s *server) ReserveStocks(_ context.Context, in *catalog.ReserveStocksRequest) (*catalog.ReserveStocksResponse, error) {
+	items := in.GetData()
+	if len(items) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "items required")
+	}
+	for _, item := range items {
+		if item.GetProductUuid() == "" {
+			return nil, status.Errorf(codes.InvalidArgument, "product_uuid required")
+		}
+		if item.GetQuantity() <= 0 {
+			return nil, status.Errorf(codes.InvalidArgument, "quantity must be greater than 0")
+		}
+	}
+	log.Printf("Received: %v", items)
+
+	results := []*catalog.ReserveStockResult{}
+	for _, item := range items {
+		result := &catalog.ReserveStockResult{
+			ProductUuid: item.GetProductUuid(),
+			Status:      catalog.ReserveStatus_RESERVE_STATUS_SUCCESS,
+		}
+		results = append(results, result)
+	}
+	// results[1].Status = catalog.ReserveStatus_RESERVE_STATUS_INSUFFICIENT_STOCK // Simulate that the second product cannot be reserved
+
+	reserved := true
+	for _, result := range results {
+		if result.GetStatus() != catalog.ReserveStatus_RESERVE_STATUS_SUCCESS {
+			reserved = false
+			break
+		}
+	}
+	return &catalog.ReserveStocksResponse{Data: results, Reserved: reserved}, nil
+}
+
 func main() {
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))

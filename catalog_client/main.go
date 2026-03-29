@@ -50,7 +50,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not list products: %v", err)
 	}
-	for _, product := range productsResponse.GetData() {
+	products := productsResponse.GetData()
+	for _, product := range products {
 		log.Printf("Product: %s", product.GetName())
 	}
 
@@ -72,4 +73,41 @@ func main() {
 		}
 		log.Printf("Stream Product: %s", product.GetName())
 	}
+
+	productNames := map[string]string{}
+	reserveStocksRequest := &catalog.ReserveStocksRequest{}
+	for i, product := range products {
+		reserveStock := &catalog.ReserveStock{
+			ProductUuid: product.GetUuid(),
+			Quantity:    int32(i + 1),
+		}
+		productNames[product.GetUuid()] = product.GetName()
+		reserveStocksRequest.Data = append(reserveStocksRequest.Data, reserveStock)
+	}
+
+	reserveCtx, reserveCancel := context.WithTimeout(context.Background(), time.Second)
+	defer reserveCancel()
+	reserveStocksResponse, err := c.ReserveStocks(reserveCtx, reserveStocksRequest)
+	if err != nil {
+		log.Fatalf("could not reserve stocks: %v", err)
+	}
+	reserved := reserveStocksResponse.GetReserved()
+	if !reserved {
+		for _, item := range reserveStocksResponse.GetData() {
+			status := item.GetStatus()
+			if status == catalog.ReserveStatus_RESERVE_STATUS_SUCCESS {
+				continue
+			}
+
+			switch status {
+			case catalog.ReserveStatus_RESERVE_STATUS_INSUFFICIENT_STOCK:
+				log.Fatalf("Insufficient stock for product: %s", productNames[item.GetProductUuid()])
+			case catalog.ReserveStatus_RESERVE_STATUS_NOT_FOUND:
+				log.Fatalf("Product not found: %s", productNames[item.GetProductUuid()])
+			default:
+				log.Fatalf("Unknown reserve status for product: %s, status: %v", productNames[item.GetProductUuid()], status)
+			}
+		}
+	}
+	log.Println("Stocks reserved successfully")
 }

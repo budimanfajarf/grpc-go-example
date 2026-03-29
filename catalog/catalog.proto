@@ -8,17 +8,12 @@ service Catalog {
     rpc GetStore(GetStoreRequest) returns (GetStoreResponse);
     rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
     rpc StreamProducts(StreamProductsRequest) returns (stream Product);
+    rpc ReserveStocks(ReserveStocksRequest) returns (ReserveStocksResponse);
 }
 
 message Store {
     string uuid = 1;
     string name = 2;
-}
-
-message Product {
-    string uuid = 1;
-    string name = 2;
-    int64 price = 3; // IDR, no decimals
 }
 
 message GetStoreRequest {
@@ -27,6 +22,12 @@ message GetStoreRequest {
 
 message GetStoreResponse {
     Store data = 1;
+}
+
+message Product {
+    string uuid = 1;
+    string name = 2;
+    int64 price = 3; // IDR, no decimals
 }
 
 message ListProductsRequest {
@@ -39,4 +40,30 @@ message ListProductsResponse {
 
 message StreamProductsRequest {
     repeated string uuids = 1;
+}
+
+message ReserveStock {
+    string product_uuid = 1;
+    int32 quantity = 2;
+}
+
+message ReserveStocksRequest {
+    repeated ReserveStock data = 1;
+}
+
+enum ReserveStatus {
+    RESERVE_STATUS_UNSPECIFIED = 0;
+    RESERVE_STATUS_SUCCESS = 1;
+    RESERVE_STATUS_INSUFFICIENT_STOCK = 2;
+    RESERVE_STATUS_NOT_FOUND = 3;
+}
+
+message ReserveStockResult {
+    string product_uuid = 1;
+    ReserveStatus status = 2;
+}
+
+message ReserveStocksResponse {
+    repeated ReserveStockResult data = 1;
+    bool reserved = 2;
 }
