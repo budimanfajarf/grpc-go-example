@@ -9,7 +9,9 @@ import (
 
 	"github.com/budimanfajarf/grpc-go-example/catalog"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -29,7 +31,11 @@ func main() {
 	defer cancel()
 	storeResponse, err := c.GetStore(ctx, &catalog.GetStoreRequest{Uuid: "019d32d0-41cb-71a8-b71a-3d1089974b45"})
 	if err != nil {
-		log.Fatalf("could not get store: %v", err)
+		if status.Code(err) == codes.NotFound {
+			log.Printf("Store not found")
+		} else {
+			log.Fatalf("unexpected error: %v", err)
+		}
 	}
 	store := storeResponse.GetData()
 	log.Printf("Store: %s", store.GetName())

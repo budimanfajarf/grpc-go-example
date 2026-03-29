@@ -10,6 +10,8 @@ import (
 
 	"github.com/budimanfajarf/grpc-go-example/catalog"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -23,13 +25,12 @@ type server struct {
 // GetStore implements catalog.CatalogServer
 func (s *server) GetStore(_ context.Context, in *catalog.GetStoreRequest) (*catalog.GetStoreResponse, error) {
 	uuid := in.GetUuid()
+	if uuid == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "uuid required")
+	}
 	log.Printf("Received: %v", uuid)
 
-	if uuid == "" {
-		return nil, fmt.Errorf("uuid required")
-	}
-
-	// return nil, nil // simulate not found
+	// return nil, status.Errorf(codes.NotFound, "store not found") // simulate not found error
 
 	return &catalog.GetStoreResponse{
 		Data: &catalog.Store{
@@ -42,7 +43,7 @@ func (s *server) GetStore(_ context.Context, in *catalog.GetStoreRequest) (*cata
 func (s *server) ListProducts(_ context.Context, in *catalog.ListProductsRequest) (*catalog.ListProductsResponse, error) {
 	uuids := in.GetUuids()
 	if len(uuids) == 0 {
-		return nil, fmt.Errorf("uuids required")
+		return nil, status.Errorf(codes.InvalidArgument, "uuids required")
 	}
 	log.Printf("Received: %v", uuids)
 
@@ -57,7 +58,7 @@ func (s *server) ListProducts(_ context.Context, in *catalog.ListProductsRequest
 func (s *server) StreamProducts(in *catalog.StreamProductsRequest, stream catalog.Catalog_StreamProductsServer) error {
 	uuids := in.GetUuids()
 	if len(uuids) == 0 {
-		return fmt.Errorf("uuids required")
+		return status.Errorf(codes.InvalidArgument, "uuids required")
 	}
 	log.Printf("Received: %v", uuids)
 
